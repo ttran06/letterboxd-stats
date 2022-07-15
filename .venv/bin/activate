@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/media/truc/Toshiba/letterboxd_viz/.venv"
+VIRTUAL_ENV="/Users/tructran/Documents/letterboxd-stats/.venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

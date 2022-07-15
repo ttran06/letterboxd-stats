@@ -1,4 +1,4 @@
-#!/media/truc/Toshiba/letterboxd_viz/.venv/bin/python3
+#!/Users/tructran/Documents/letterboxd-stats/.venv/bin/python3.9
 
 import sys
 import json

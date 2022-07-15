@@ -26,6 +26,7 @@ class MoviesSpider(scrapy.Spider):
 
     def parse(self, response):
         movie_url = response.url.replace("ttran06/", "")
+        loader = ItemLoader(item=MovieItem, selector)
         yield response.follow(movie_url, callback=self.parse_movies)
 
     def parse_movies(self, response):
@@ -35,9 +36,7 @@ class MoviesSpider(scrapy.Spider):
         casts_link = response.css('div.cast-list p a::attr("href")').extract()
         genres = response.css('div#tab-genres a[href^="/films/genre"]::text').extract()
         rating = float(
-            response.css('head > meta[name="twitter:data2"]::attr(content)')
-            .get()
-            .split()[0]
+            response.css('head > meta[name="twitter:data2"]::attr(content)').get()
         )
         country = response.css(
             'div#tab-details a[href^="/films/country"]::text'

@@ -3,28 +3,27 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/items.html
 
-import re
 
-import scrapy
+from scrapy import Field, Item
 from scrapy.loader.processors import MapCompose
 
 
 def get_rating(text):
-    rating_re = re.compile("(\d\.\d{2}) out of 5")
-    rating = float(re.search(rating_re, text).group(1))
+    rating = float(text.split()[0])
 
     return rating
 
 
-class MovieItem(scrapy.Item):
+class MovieItem(Item):
     # define the fields for your item here like:
-    # name = scrapy.Field()
-    id = scrapy.Field()
-    title = scrapy.Field()
-    director = scrapy.Field()
-    actors = scrapy.Field()
-    genres = scrapy.Field()
-    rating = scrapy.Field(input_processor=MapCompose(get_rating))
-    country = scrapy.Field()
-    production_company = scrapy.Field()
-    release_year = scrapy.Field()
+    id = Field()
+    title = Field()
+    director = Field()
+    actors = Field()
+    genres = Field()
+    rating = Field(input_processor=MapCompose(get_rating))
+    country = Field()
+    production_company = Field()
+    release_year = Field()
+    count = Field()
+    mean = Field()
