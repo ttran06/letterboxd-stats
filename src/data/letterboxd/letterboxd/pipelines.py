@@ -8,7 +8,7 @@
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
-from src.models import (
+from .models import (
     db_connect,
     create_table,
     Movie,
@@ -76,8 +76,6 @@ class MysqlPipeline:
             if exist_production_company is not None:
                 production_company = exist_production_company
             movie.production_company.append(production_company)
-
-    def close_spider(self, spider):
 
         try:
             session.add(movie)
