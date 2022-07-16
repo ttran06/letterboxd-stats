@@ -11,7 +11,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy_utils import database_exists, create_database
 
 
 Base = declarative_base()
@@ -172,8 +171,5 @@ class Country(Base):
     id = Column(Integer, primary_key=True)
     country = Column("country", String(30), unique=True)
     movies = relationship(
-        "movie",
-        secondary="movies_country",
-        lazy="dynamic",
-        backref="country",
+        "movie", secondary="movies_country", lazy="dynamic", backref="country"
     )

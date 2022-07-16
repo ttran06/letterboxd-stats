@@ -14,16 +14,24 @@ def get_rating(text):
     return rating
 
 
+def filter_casts(text):
+    return None if text == "Show All…" else text
+
+
+def make_float(x):
+    return float(x)
+
+
 class MovieItem(Item):
     # define the fields for your item here like:
-    id = Field()
     title = Field()
     director = Field()
     actors = Field()
+    actors_link = Field()
     genres = Field()
-    rating = Field(input_processor=MapCompose(get_rating))
+    rating = Field(input_processor=MapCompose(get_rating, make_float))
     country = Field()
     production_company = Field()
-    release_year = Field()
+    release_year = Field(input_process=MapCompose(int))
     count = Field()
     mean = Field()

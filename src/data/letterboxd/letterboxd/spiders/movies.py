@@ -30,42 +30,31 @@ class MoviesSpider(scrapy.Spider):
         yield response.follow(movie_url, callback=self.parse_movies)
 
     def parse_movies(self, response):
+        loader = ItemLoader(item=MovieItem(), response=response)
+
         movie_title = response.css("h1.headline-1::text").get()
-        director = response.css('div#tab-crew a[href^="/director"]::text').extract()
         casts = response.css("div.cast-list p a::text").extract()
-        casts_link = response.css('div.cast-list p a::attr("href")').extract()
-        genres = response.css('div#tab-genres a[href^="/films/genre"]::text').extract()
-        rating = float(
+        loader.add_css("title", response.css("h1.headline-1::text").get())
+        loader.add_css("director", response.css('div#tab-crew a[href^="/director"]::text').extract())
+        loader.add_css("casts", response.css("div.cast-list p a::text").extract())
+        loader.add_css('casts_link', response.css('div.cast-list p a::attr("href")').extract())
+        loader.add_css('genres', response.css('div#tab-genres a[href^="/films/genre"]::text').extract())
+        loader.add_css('rating',
             response.css('head > meta[name="twitter:data2"]::attr(content)').get()
         )
-        country = response.css(
+        loader.add_css('country', response.css(
             'div#tab-details a[href^="/films/country"]::text'
-        ).extract()
-        production_company = response.css(
+        ).extract())
+        loader.add_css('production_company', response.css(
             'div#tab-details a[href^="/studio"]::text'
-        ).extract()
-        release_year = response.css('a[href^="/films/year"]::text').get()
-        count = self.calculated_diary.loc[
+        ).extract())
+        loader.add_css('release_year', response.css('a[href^="/films/year"]::text').get())
+        loader.add_value('count', self.calculated_diary.loc[
             self.calculated_diary["Name"] == movie_title, "Rating"
-        ].iloc[0, 0]
-        mean = self.calculated_diary.loc[
+        ].iloc[0, 0])
+        loader.add_value('mean', self.calculated_diary.loc[
             self.calculated_diary["Name"] == movie_title, "Rating"
-        ].iloc[0, 1]
+        ].iloc[0, 1])
 
-        if "Show All…" in casts:
-            casts.remove("Show All…")
+        yield loader.load_item()
 
-        yield {
-            "movie": movie_title,
-            "director": director,
-            "casts": casts,
-            "casts_link": casts_link,
-            "genres": genres,
-            "rating": rating,
-            "country": country,
-            "production_company": production_company,
-            "release_year": release_year,
-            "num_watch": count,
-            "avg_user_rating": mean,
-        }
-        # loader = ItemLoader(item=MovieItem(), selector=movie)

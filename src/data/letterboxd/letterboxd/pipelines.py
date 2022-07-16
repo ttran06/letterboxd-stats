@@ -7,7 +7,7 @@
 # useful for handling different item types with a single interface
 
 from sqlalchemy.orm import sessionmaker
-from scrapy.exceptions import DropItem
+from sqlalchemy_utils import database_exists, create_database
 from src.models import (
     db_connect,
     create_table,
@@ -26,6 +26,8 @@ class MysqlPipeline:
         Creates tables
         """
         engine = db_connect()
+        if not database_exists(engine.url):
+            create_database(engine.url)
         create_table(engine)
         self.Session = sessionmaker(bind=engine)
 
@@ -48,8 +50,11 @@ class MysqlPipeline:
             director = Director(name=director_name)
             movie.director.append(director)
 
-        for actor_name in item["casts"]:
+        for actor_name, actor_link in zip(item["casts"], item["casts_link"]):
             actor = Actor(name=actor_name)
+            exist_actor = session.query(Actor).filter_by(link=actor.link).first()
+            if exist_actor is not None:
+                actor = exist_actor
             movie.actors.append(actor)
 
         for genre_type in item["genres"]:
@@ -71,6 +76,8 @@ class MysqlPipeline:
             if exist_production_company is not None:
                 production_company = exist_production_company
             movie.production_company.append(production_company)
+
+    def close_spider(self, spider):
 
         try:
             session.add(movie)
