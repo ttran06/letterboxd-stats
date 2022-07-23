@@ -8,6 +8,7 @@ from sqlalchemy import (
     Float,
     Table,
     ForeignKey,
+    Date,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -24,7 +25,7 @@ def db_connect():
     """
 
     return create_engine(
-        f"mysql://{config.username}:{config.password}@{config.host}/{config.dbname}",
+        f"mysql+mysqlconnector://{config.username}:{config.password}@{config.host}/{config.dbname}",
         echo=True,
     )
 
@@ -40,8 +41,8 @@ def create_table(engine):
 movie_director = Table(
     "movie_director",
     Base.metadata,
-    Column("movie_id", Integer, ForeignKey("movies.id")),
-    Column("director_id", Integer, ForeignKey("director.id")),
+    Column("movie_id", Integer, ForeignKey("movies.id"), primary_key=True),
+    Column("director_id", Integer, ForeignKey("director.id"), primary_key=True),
 )
 movie_actors = Table(
     "movie_actors",
@@ -68,6 +69,14 @@ movie_production_company = Table(
     Column("production_company_id", Integer, ForeignKey("production_company.id")),
 )
 
+watch_history = Table(
+    "watch_history",
+    Base.metadata,
+    Column("watched_on", Date, nullable=False),
+    Column("rating", Float),
+    Column("movie", Integer, ForeignKey("movies.id")),
+)
+
 
 class Movie(Base):
     """
@@ -78,26 +87,30 @@ class Movie(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column("title", String(150), nullable=False)
+    watched_on = relationship("watch_history")
     # Many-to-Many relationship between movie and director
     director = relationship(
-        "director", secondary="movie_director", lazy="dynamic", backref="movies"
+        "Director", secondary=movie_director, lazy="dynamic", backref="movies"
     )
     actors = relationship(
-        "actors", secondary="movie_actors", lazy="dynamic", backref="movies"
+        "Actor", secondary=movie_actors, lazy="dynamic", backref="movies"
     )
     genres = relationship(
-        "genres", secondary="movie_genres", lazy="dynamic", backref="movies"
+        "Genre", secondary=movie_genre, lazy="dynamic", backref="movies"
     )
-    rating = Column("rating", Float)
+    rating = Column("rating", Float, nullable=False)
     user_rating = Column("user_rating", Float, nullable=True)
-    country = relationship("country", secondary="movies_country")
+    country = relationship(
+        "Country", secondary=movie_country, lazy="dynamic", backref="movie"
+    )
+
     production_company = relationship(
-        "production_company",
-        secondary="movie_production_company",
+        "ProductionCompany",
+        secondary=movie_production_company,
         lazy="dynamic",
         backref="movie",
     )
-    release_year = Column("release_year", Integer)
+    release_year = Column("release_year", Integer, nullable=False)
     num_watch = Column("num_watch", Integer)
 
 
@@ -110,9 +123,6 @@ class Director(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column("name", String(50))
-    movies = relationship(
-        "movie", secondary="movies_director", lazy="dynamic", backref="director"
-    )
 
 
 class Actor(Base):
@@ -125,9 +135,6 @@ class Actor(Base):
     id = Column(Integer, primary_key=True)
     name = Column("name", String(50))
     link = Column("link", String(200), unique=True)
-    movies = relationship(
-        "movie", secondary="movies_actors", lazy="dynamic", backref="actor"
-    )
 
 
 class Genre(Base):
@@ -139,9 +146,6 @@ class Genre(Base):
 
     id = Column(Integer, primary_key=True)
     genre = Column("genre", String(30), unique=True)
-    movies = relationship(
-        "movie", secondary="movies_genres", lazy="dynamic", backref="genre"
-    )
 
 
 class ProductionCompany(Base):
@@ -153,12 +157,6 @@ class ProductionCompany(Base):
 
     id = Column(Integer, primary_key=True)
     production_company = Column("production_company", String(60), unique=True)
-    movies = relationship(
-        "movie",
-        secondary="movies_production_company",
-        lazy="dynamic",
-        backref="production_company",
-    )
 
 
 class Country(Base):
@@ -170,6 +168,15 @@ class Country(Base):
 
     id = Column(Integer, primary_key=True)
     country = Column("country", String(30), unique=True)
-    movies = relationship(
-        "movie", secondary="movies_country", lazy="dynamic", backref="country"
-    )
+
+
+class MovieHistory(Base):
+    """
+    class for movie history class
+    """
+
+    __tablename__ = "watch_history"
+
+    watched_on = Column("watched_on", Date, nullable=False, primary_key=True)
+    rating = Column("rating", Float)
+    movie = Column("movie", Integer, ForeignKey("movie.id"), primary_key=True)

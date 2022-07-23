@@ -17,11 +17,9 @@ class MoviesSpider(scrapy.Spider):
     def __init__(self, diary_file="letterboxd/spiders/diary.csv", *args, **kwargs):
         super(MoviesSpider, self).__init__(*args, **kwargs)
         self.diary = pd.read_csv(diary_file)
-        # calculate number of watches and avg rating
-        self.calculated_diary = self.diary.groupby(
-            ["Name", "Year"], as_index=False
-        ).agg({"Rating": ["count", "mean"]})
         self.diary.drop_duplicates(subset=["Name", "Year"], inplace=True)
+        self.diary["Date"] = pd.to_datetime(self.diary["Date"])
+        self.diary["Watched Date"] = pd.to_datetime(self.diary["Watched Date"])
         self.start_urls = self.diary["Letterboxd URI"].tolist()
 
     def parse(self, response):
@@ -32,45 +30,22 @@ class MoviesSpider(scrapy.Spider):
         loader = ItemLoader(item=MovieItem(), response=response)
 
         movie_title = response.css("h1.headline-1::text").get()
-        loader.add_css("title", response.css("h1.headline-1::text").get())
-        loader.add_css(
-            "director",
-            response.css('div#tab-crew a[href^="/director"]::text').extract(),
-        )
-        loader.add_css("casts", response.css("div.cast-list p a::text").extract())
-        loader.add_css(
-            "casts_link", response.css('div.cast-list p a::attr("href")').extract()
-        )
-        loader.add_css(
-            "genres",
-            response.css('div#tab-genres a[href^="/films/genre"]::text').extract(),
-        )
-        loader.add_css(
-            "rating",
-            response.css('head > meta[name="twitter:data2"]::attr(content)').get(),
-        )
-        loader.add_css(
-            "country",
-            response.css('div#tab-details a[href^="/films/country"]::text').extract(),
-        )
-        loader.add_css(
-            "production_company",
-            response.css('div#tab-details a[href^="/studio"]::text').extract(),
-        )
-        loader.add_css(
-            "release_year", response.css('a[href^="/films/year"]::text').get()
+        loader.add_css("title", "h1.headline-1::text")
+        loader.add_css("director", 'div#tab-crew a[href^="/director"]::text')
+        loader.add_css("actors", "div.cast-list p a::text")
+        loader.add_css("actors_link", 'div.cast-list p a::attr("href")')
+        loader.add_css("genres", 'div#tab-genres a[href^="/films/genre"]::text')
+        loader.add_css("rating", 'head > meta[name="twitter:data2"]::attr(content)')
+        loader.add_css("country", 'div#tab-details a[href^="/films/country"]::text')
+        loader.add_css("production_company", 'div#tab-details a[href^="/studio"]::text')
+        loader.add_css("release_year", 'a[href^="/films/year"]::text')
+        loader.add_value(
+            "watched_on",
+            len(self.diary.loc[self.diary["Name"] == movie_title, "Watched Date"]),
         )
         loader.add_value(
-            "count",
-            self.calculated_diary.loc[
-                self.calculated_diary["Name"] == movie_title, "Rating"
-            ].iloc[0, 0],
-        )
-        loader.add_value(
-            "mean",
-            self.calculated_diary.loc[
-                self.calculated_diary["Name"] == movie_title, "Rating"
-            ].iloc[0, 1],
+            "user_rating",
+            self.diary.loc[self.diary["Name"] == movie_title, "Rating"].tolist(),
         )
 
         yield loader.load_item()

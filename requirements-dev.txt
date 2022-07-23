@@ -12,3 +12,4 @@ sqlalchemy==1.4.39
 sqlalchemy-utils==0.38.3
 scrapy==2.6.1
 pandas==1.4.3
+mysql-connector-python

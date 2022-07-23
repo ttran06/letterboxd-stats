@@ -6,8 +6,8 @@
 
 # useful for handling different item types with a single interface
 
+import logging
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy_utils import database_exists, create_database
 from .models import (
     db_connect,
     create_table,
@@ -26,10 +26,9 @@ class MysqlPipeline:
         Creates tables
         """
         engine = db_connect()
-        if not database_exists(engine.url):
-            create_database(engine.url)
         create_table(engine)
         self.Session = sessionmaker(bind=engine)
+        logging.info("*****MysqlPiple: database connected*****")
 
     def process_item(self, item, spider):
         """
@@ -43,15 +42,23 @@ class MysqlPipeline:
         genre = Genre()
         production_company = ProductionCompany()
 
+        movie.title = item["title"]
         movie.rating = item["rating"]
         movie.release_year = item["release_year"]
+        movie.num_watch = item["num_watch"]
+        movie.user_rating = item["mean"]
 
         for director_name in item["director"]:
             director = Director(name=director_name)
+            exist_director = (
+                session.query(Director).filter_by(name=director.name).first()
+            )
+            if exist_director is not None:
+                director = exist_director
             movie.director.append(director)
 
-        for actor_name, actor_link in zip(item["casts"], item["casts_link"]):
-            actor = Actor(name=actor_name)
+        for actor_name, actor_link in zip(item["actors"], item["actors_link"]):
+            actor = Actor(name=actor_name, link=actor_link)
             exist_actor = session.query(Actor).filter_by(link=actor.link).first()
             if exist_actor is not None:
                 actor = exist_actor
